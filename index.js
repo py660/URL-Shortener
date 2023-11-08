@@ -24,12 +24,19 @@ app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use("/public", express.static(`${process.cwd()}/public`));
+let db = [];
 
 async function getLongUrl(shortUrl) {
   //console.log(await sql`SELECT "longurl" FROM links WHERE shorturl = ${shortUrl}`)
   return (
     await sql`SELECT "longurl" FROM links WHERE shorturl = ${shortUrl}`
   )[0]?.longurl;
+}
+
+async function getLongUrlFromBackup(shortUrl) {
+    db = Array.from(db);
+    console.log(db.filter((item => {return item.shorturl == shortUrl}))[0]?.longurl);
+    return db.filter((item) => {return item.shorturl == shortUrl})[0]?.longurl;
 }
 
 async function getShortUrl(longUrl) {
@@ -43,20 +50,29 @@ async function listShortUrls() {
 }
 
 async function insertRow(row) {
+    console.log("INS:")
   console.log(row);
   //console.log();
   return await sql`INSERT INTO links ("uid", "longurl", "shorturl") VALUES (${row.uid}, ${row.longurl}, ${row.shorturl})`;
 }
 
 async function downloadDB() {
-  return True;
+  return await sql`SELECT * FROM links;`;
+}
+
+function updateBackup(data){
+    //console.log(data)
+    db = data;
 }
 
 async function start() {
+  db = updateBackup(await downloadDB())
   //console.log(await getLongUrl("abcde"));
   //console.log(await gen_shorturl());
 }
 start();
+
+setInterval(async ()=>{updateBackup(await downloadDB())}, 1000);
 
 async function gen_shorturl() {
   let shortUrls = await listShortUrls();
@@ -125,6 +141,7 @@ app.post("/api/shorturl", async (req, res) => {
           await insertRow({ uid: 1, shorturl: short, longurl: input })
         );
         console.log("inserted");
+        await downloadDB();
       }
       return res.redirect("/success?url=" + short);
     }
@@ -133,7 +150,7 @@ app.post("/api/shorturl", async (req, res) => {
 
 app.get("/:shorturl", async (req, res) => {
   let input = req.params.shorturl;
-  let longUrl = await getLongUrl(input.toLowerCase());
+  let longUrl = await getLongUrlFromBackup(input.toLowerCase());
   console.log(longUrl);
   if (!longUrl) {
     res.sendFile(process.cwd() + "/views/error.html");
