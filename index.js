@@ -34,9 +34,15 @@ async function getLongUrl(shortUrl) {
 }
 
 async function getLongUrlFromBackup(shortUrl) {
-    db = Array.from(db);
-    console.log(db.filter((item => {return item.shorturl == shortUrl}))[0]?.longurl);
-    return db.filter((item) => {return item.shorturl == shortUrl})[0]?.longurl;
+  db = Array.from(db);
+  console.log(
+    db.filter((item) => {
+      return item.shorturl == shortUrl;
+    })[0]?.longurl
+  );
+  return db.filter((item) => {
+    return item.shorturl == shortUrl;
+  })[0]?.longurl;
 }
 
 async function getShortUrl(longUrl) {
@@ -50,7 +56,7 @@ async function listShortUrls() {
 }
 
 async function insertRow(row) {
-    console.log("INS:")
+  console.log("INS:");
   console.log(row);
   //console.log();
   return await sql`INSERT INTO links ("uid", "longurl", "shorturl") VALUES (${row.uid}, ${row.longurl}, ${row.shorturl})`;
@@ -60,19 +66,21 @@ async function downloadDB() {
   return await sql`SELECT * FROM links;`;
 }
 
-function updateBackup(data){
-    //console.log(data)
-    db = data;
+function updateBackup(data) {
+  //console.log(data)
+  db = data;
 }
 
 async function start() {
-  db = updateBackup(await downloadDB())
+  db = updateBackup(await downloadDB());
   //console.log(await getLongUrl("abcde"));
   //console.log(await gen_shorturl());
 }
 start();
 
-setInterval(async ()=>{updateBackup(await downloadDB())}, 1000);
+setInterval(async () => {
+  updateBackup(await downloadDB());
+}, 1000);
 
 async function gen_shorturl() {
   let shortUrls = await listShortUrls();
